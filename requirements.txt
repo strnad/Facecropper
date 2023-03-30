@@ -1,2 +1,4 @@
-face_recognition
+opencv-python
+opencv-python-headless
 pillow
+numpy

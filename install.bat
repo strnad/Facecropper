@@ -6,5 +6,4 @@ call venv\Scripts\activate.bat
 echo.
 echo. installing requirements...
 pip install -r requirements.txt
-echo Running application...
-python app.py
+echo Now you can run the run.bat to process all photos in _INPUT folder, you will find the cropped photos in _OUTPUT folder. Enjoy! :)
