@@ -1,0 +1,7 @@
+venv/
+*pycache*
+*/*pycache*
+*/*/pycache*
+*.jpg
+*.png
+*.jpeg
