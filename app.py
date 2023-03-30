@@ -44,25 +44,27 @@ def crop_and_resize(input_path, output_path, offset_x=0, offset_y=0, face_percen
 
                 output_file = os.path.join(output_path, os.path.basename(img_path))
                 cv2.imwrite(output_file, cropped_face)
+ 
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("input_path", help="Path to the image file or folder containing images")
-    parser.add_argument("output_path", help="Path to the output folder")
+    #parser.add_argument("input_path", help="Path to the image file or folder containing images")
+    #parser.add_argument("output_path", help="Path to the output folder")
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("input_path", help="Path to the image file or folder containing images")
-    parser.add_argument("output_path", help="Path to the output folder")
+    #parser.add_argument("input_path", help="Path to the image file or folder containing images")
+    #parser.add_argument("output_path", help="Path to the output folder")
     parser.add_argument("--offset_x", type=int, default=0, help="Percentage of horizontal offset around the face (default: 0)")
     parser.add_argument("--offset_y", type=int, default=0, help="Percentage of vertical offset around the face (default: 0)")
     parser.add_argument("--face_percent", type=int, default=75, help="Percentage of the face size in the cropped photo (default: 75)")
-    parser.add_argument("--resize", type=int, default=None, help="Resize the output image to the specified size (default: None)")
+    parser.add_argument("--resize", type=int, default=512, help="Resize the output image to the specified size (default: 512)")
 
     args = parser.parse_args()
 
     crop_and_resize(
-        input_path=args.input_path,
-        output_path=args.output_path,
+        input_path="_INPUT",
+        output_path="_OUTPUT",
         offset_x=args.offset_x,
         offset_y=args.offset_y,
         face_percent=args.face_percent,
