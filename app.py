@@ -34,21 +34,27 @@ def crop_and_resize(input_path, output_path, offset_x=0, offset_y=0, face_percen
                 face = img[startY:endY, startX:endX]
                 face_h, face_w = face.shape[:2]
 
-                offsetX = int(face_w * offset_x / 100)
-                offsetY = int(face_h * offset_y / 100)
+                # Calculate the additional offset based on the face_percent parameter
+                additional_offset_x = int(face_w * (100 - face_percent) / 100) // 2
+                additional_offset_y = int(face_h * (100 - face_percent) / 100) // 2
+                
+                # Update offsets
+                offsetX = int(face_w * offset_x / 100) + additional_offset_x
+                offsetY = int(face_h * offset_y / 100) + additional_offset_y
+
+                # Crop the face
                 crop_startX = max(startX - offsetX, 0)
                 crop_startY = max(startY - offsetY, 0)
                 crop_endX = min(endX + offsetX, w)
                 crop_endY = min(endY + offsetY, h)
 
                 cropped_face = img[crop_startY:crop_endY, crop_startX:crop_endX]
-
+                # Resize the face
                 if resize:
                     cropped_face = cv2.resize(cropped_face, (resize, resize))
-
+                # Save the face
                 output_file = os.path.join(output_path, os.path.basename(img_path))
                 cv2.imwrite(output_file, cropped_face)
-
 
         # Print a message if no face was detected
         if not face_detected:
@@ -65,7 +71,7 @@ if __name__ == "__main__":
     #parser.add_argument("output_path", help="Path to the output folder")
     parser.add_argument("--offset_x", type=int, default=0, help="Percentage of horizontal offset around the face (default: 0)")
     parser.add_argument("--offset_y", type=int, default=0, help="Percentage of vertical offset around the face (default: 0)")
-    parser.add_argument("--face_percent", type=int, default=75, help="Percentage of the face size in the cropped photo (default: 75)")
+    parser.add_argument("--face_percent", type=int, default=40, help="Percentage of the face size in the cropped photo (default: 40)")
     parser.add_argument("--resize", type=int, default=512, help="Resize the output image to the specified size (default: 512)")
 
     args = parser.parse_args()
