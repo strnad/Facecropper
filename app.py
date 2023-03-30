@@ -18,6 +18,9 @@ def crop_and_resize(input_path, output_path, offset_x=0, offset_y=0, face_percen
         img = cv2.imread(img_path)
         (h, w) = img.shape[:2]
 
+        #add variable to keep track of face detection
+        face_detected = False
+
         blob = cv2.dnn.blobFromImage(cv2.resize(img, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
         net.setInput(blob)
         detections = net.forward()
@@ -25,6 +28,7 @@ def crop_and_resize(input_path, output_path, offset_x=0, offset_y=0, face_percen
         for i in range(detections.shape[2]):
             confidence = detections[0, 0, i, 2]
             if confidence > 0.5:
+                face_detected = True
                 box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
                 (startX, startY, endX, endY) = box.astype("int")
                 face = img[startY:endY, startX:endX]
@@ -44,7 +48,11 @@ def crop_and_resize(input_path, output_path, offset_x=0, offset_y=0, face_percen
 
                 output_file = os.path.join(output_path, os.path.basename(img_path))
                 cv2.imwrite(output_file, cropped_face)
- 
+
+
+        # Print a message if no face was detected
+        if not face_detected:
+            print(f"No faces detected in {img_path}") 
 
 
 if __name__ == "__main__":
