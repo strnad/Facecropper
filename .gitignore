@@ -7,5 +7,4 @@ venv/
 *.jpeg
 _INPUT/
 _OUTPUT/
-models/
 .vscode/
