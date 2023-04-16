@@ -80,7 +80,7 @@ def process_image(image, face, offset_x, offset_y, face_percent, resize):
 
     return resized_image
 
-def convert_to_srgb(pil_image):
+def convert_to_srgb(pil_image,print_info=False):
     # Load the sRGB ICC profile
     srgb_profile = ImageCms.createProfile("sRGB")
 
@@ -89,11 +89,13 @@ def convert_to_srgb(pil_image):
         input_icc_profile = ImageCms.ImageCmsProfile(BytesIO(pil_image.info["icc_profile"]))
         transform = ImageCms.buildTransform(input_icc_profile, srgb_profile, "RGB", "RGB")
         srgb_image = ImageCms.applyTransform(pil_image, transform)
-        print("Converted image to sRGB color space.")
+        if print_info:
+            print("Converted image to sRGB color space.")
     else:
         # If the image does not have an embedded ICC profile, assume it is already in sRGB        
         srgb_image = pil_image
-        print("Image does not have an embedded ICC profile. Assuming it is already in sRGB color space.")
+        if print_info:
+            print("Image does not have an embedded ICC profile. Assuming it is already in sRGB color space.")
 
     return srgb_image
 
@@ -110,12 +112,12 @@ def main(input_folder, output_folder, offset_x, offset_y, face_percent, resize, 
         if file.lower().endswith((".jpg", ".jpeg", ".png")):
             image_path = os.path.join(input_folder, file)            
             pilimage = Image.open(image_path) 
-            pilimageSrgb = convert_to_srgb(pilimage) #convert to sRGB color space
+            pilimageSrgb = convert_to_srgb(pilimage,print_info=True) #convert to sRGB color space
             image = np.array(pilimageSrgb) #convert to numpy array
             image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)  # Convert from RGB to BGR
             faces = detect_faces(image, net, threshold)
             if len(faces) == 0:
-                print(f"No face detected in {file}. Skipping file.")
+                print(f"\nNo face detected in {file}. Skipping file.")
             else:
                 for i, face in enumerate(faces):
                     processed_image = process_image(image, face, offset_x, offset_y, face_percent, resize)
@@ -123,7 +125,7 @@ def main(input_folder, output_folder, offset_x, offset_y, face_percent, resize, 
                     cv2.imwrite(output_path, processed_image)
                     print(f"\nProcessed {file} and saved face {i} to {output_path}.")
         else:
-            print(f"Unsupported file format {file}. Skipping file.")
+            print(f"\nUnsupported file format {file}. Skipping file.")
 
 def run_cli():
     parser = argparse.ArgumentParser(description="Face detection and cropping")
