@@ -21,7 +21,7 @@ if "%face_percent%"=="" set face_percent=40.0
 set /p resize="Size of the output image [default=512]: "
 if "%resize%"=="" set resize=512
 set /p threshold="Threshold of face detection (0-1) [default=0.5]: "
-if "%threshold%"=="" set threshold=0.4
+if "%threshold%"=="" set threshold=0.5
 set /p output_format="Output format (jpg, png, etc.) [default=jpg]: "
 if "%output_format%"=="" set output_format=jpg
 
