@@ -2,9 +2,11 @@
 echo Choose an option:
 echo 1. Run with default parameters
 echo 2. Run interactively (customize parameters)
-set /p choice="Enter your choice (1 or 2): "
+echo 3. Run with GUI
+set /p choice="Enter your choice (1, 2, or 3): "
 
 if "%choice%"=="1" goto run_defaults
+if "%choice%"=="3" goto run_gui
 
 :interactive
 echo Interactive mode: Enter your desired parameter values or press Enter to use default values.
@@ -38,3 +40,14 @@ call venv\Scripts\activate.bat
 python app.py
 pause
 call venv\Scripts\deactivate.bat
+goto end
+
+:run_gui
+echo Running with GUI...
+
+call venv\Scripts\activate.bat
+python gui.py
+call venv\Scripts\deactivate.bat
+goto end
+
+:end
