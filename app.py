@@ -125,7 +125,7 @@ def main(input_folder, output_folder, offset_x, offset_y, face_percent, resize, 
         else:
             print(f"Unsupported file format {file}. Skipping file.")
 
-if __name__ == "__main__":
+def run_cli():
     parser = argparse.ArgumentParser(description="Face detection and cropping")
     parser.add_argument("--input_folder", type=str, default="_INPUT", help="Input folder containing images")
     parser.add_argument("--output_folder", type=str, default="_OUTPUT", help="Output folder for processed images")
@@ -134,9 +134,10 @@ if __name__ == "__main__":
     parser.add_argument("--face_percent", type=float, default=40.0, help="Size of face in the resulting photo as a percentage")
     parser.add_argument("--resize", type=int, default=512, help="Size of the output image")
     parser.add_argument("--threshold", type=float, default=0.5, help="Threshold of face detection (0-1)")
-    parser.add_argument("--output_format", type=str, default="jpg", help="Output format (jpg, png, etc.")
-
+    parser.add_argument("--output_format", type=str, default="jpg", help="Output format (jpg, png, etc.")    
     args = parser.parse_args()
 
     main(args.input_folder, args.output_folder, args.offset_x, args.offset_y, args.face_percent, args.resize, args.threshold, args.output_format)
 
+if __name__ == "__main__":
+    run_cli()
