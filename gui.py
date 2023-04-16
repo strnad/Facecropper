@@ -77,13 +77,13 @@ output_format_var = tk.StringVar(value="jpg")
 ttk.Label(controls_frame, text="Input folder:").grid(row=0, column=0, sticky="e", padx=(0, 10))
 input_folder_entry = ttk.Entry(controls_frame, textvariable=input_folder_var)
 input_folder_entry.grid(row=0, column=1)
-ttk.Button(controls_frame, text="Browse", command=lambda: load_image_previews(filedialog.askdirectory(), input_preview_frame)).grid(row=0, column=2)
+ttk.Button(controls_frame, text="Browse", command=lambda: [input_folder_var.set(filedialog.askdirectory()), load_image_previews(input_folder_var.get(), input_preview_frame)]).grid(row=0, column=2, padx=(10, 0))
 
 # Output folder
 ttk.Label(controls_frame, text="Output folder:").grid(row=1, column=0, sticky="e", padx=(0, 10))
 output_folder_entry = ttk.Entry(controls_frame, textvariable=output_folder_var)
 output_folder_entry.grid(row=1, column=1)
-ttk.Button(controls_frame, text="Browse", command=lambda: load_image_previews(filedialog.askdirectory(), output_preview_frame)).grid(row=1, column=2)
+ttk.Button(controls_frame, text="Browse", command=lambda: [output_folder_var.set(filedialog.askdirectory()), load_image_previews(output_folder_var.get(), output_preview_frame)]).grid(row=1, column=2, padx=(10, 0))
 
 # Additional parameters
 params = [
@@ -100,20 +100,45 @@ for i, (text, var) in enumerate(params):
     ttk.Entry(controls_frame, textvariable=var).grid(row=i + 2, column=1)
 
 # Start processing button
-ttk.Button(controls_frame, text="Start Processing", command=start_processing_and_show_output).grid(row=8, column=1)
+ttk.Button(controls_frame, text="Start Processing", command=start_processing_and_show_output).grid(row=8, column=1, pady=(10, 0))
 
 # Image previews
 preview_container = ttk.Frame(main_frame)
 preview_container.grid(row=0, column=1, pady=10)
 
-input_preview_frame = ttk.Frame(preview_container, relief="groove", borderwidth=2)
+input_preview_canvas = tk.Canvas(preview_container, bg="#222", highlightthickness=0, width=640, height=480)
+input_preview_canvas.grid(row=0, column=0, padx=(0, 10))
+input_preview_frame = ttk.Frame(input_preview_canvas, relief="groove", borderwidth=2)
 input_preview_frame.grid(row=0, column=0, padx=(0, 10))
 ttk.Label(input_preview_frame, text="Input Image Previews").grid(row=0, columnspan=6)
 load_image_previews(input_folder_var.get(), input_preview_frame)
+input_preview_canvas.create_window(0, 0, window=input_preview_frame, anchor="nw")
 
-output_preview_frame = ttk.Frame(preview_container, relief="groove", borderwidth=2)
+output_preview_canvas = tk.Canvas(preview_container, bg="#222", highlightthickness=0, width=640, height=480)
+output_preview_canvas.grid(row=0, column=1)
+output_preview_frame = ttk.Frame(output_preview_canvas, relief="groove", borderwidth=2)
 output_preview_frame.grid(row=0, column=1)
 ttk.Label(output_preview_frame, text="Output Image Previews").grid(row=0, columnspan=6)
+output_preview_canvas.create_window(0, 0, window=output_preview_frame, anchor="nw")
+
+# Input preview scrollbar
+input_preview_scrollbar = ttk.Scrollbar(preview_container, orient="vertical", command=input_preview_canvas.yview)
+input_preview_scrollbar.grid(row=0, column=2, sticky="ns")
+input_preview_canvas.config(yscrollcommand=input_preview_scrollbar.set)
+
+# Output preview scrollbar
+output_preview_scrollbar = ttk.Scrollbar(preview_container, orient="vertical", command=output_preview_canvas.yview)
+output_preview_scrollbar.grid(row=0, column=4, sticky="ns")
+output_preview_canvas.config(yscrollcommand=output_preview_scrollbar.set)
+
+# Update scrolling regions
+def update_input_scroll_region(event):
+    input_preview_canvas.configure(scrollregion=input_preview_canvas.bbox("all"))
+
+def update_output_scroll_region(event):
+    output_preview_canvas.configure(scrollregion=output_preview_canvas.bbox("all"))
+
+input_preview_frame.bind("<Configure>", update_input_scroll_region)
+output_preview_frame.bind("<Configure>", update_output_scroll_region)
 
 root.mainloop()
-
