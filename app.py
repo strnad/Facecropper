@@ -2,6 +2,9 @@ import os
 import cv2
 import numpy as np
 import argparse
+from PIL import Image
+from io import BytesIO
+from PIL import ImageCms
 
 def detect_faces(image, net,threshold):
     (h, w) = image.shape[:2]
@@ -77,6 +80,23 @@ def process_image(image, face, offset_x, offset_y, face_percent, resize):
 
     return resized_image
 
+def convert_to_srgb(pil_image):
+    # Load the sRGB ICC profile
+    srgb_profile = ImageCms.createProfile("sRGB")
+
+    # Check if the image has an embedded ICC profile
+    if "icc_profile" in pil_image.info:
+        input_icc_profile = ImageCms.ImageCmsProfile(BytesIO(pil_image.info["icc_profile"]))
+        transform = ImageCms.buildTransform(input_icc_profile, srgb_profile, "RGB", "RGB")
+        srgb_image = ImageCms.applyTransform(pil_image, transform)
+        print("Converted image to sRGB color space.")
+    else:
+        # If the image does not have an embedded ICC profile, assume it is already in sRGB        
+        srgb_image = pil_image
+        print("Image does not have an embedded ICC profile. Assuming it is already in sRGB color space.")
+
+    return srgb_image
+
 def main(input_folder, output_folder, offset_x, offset_y, face_percent, resize, threshold,output_format):
     model = "models/res10_300x300_ssd_iter_140000_fp16.caffemodel"
     proto = "models/deploy.prototxt"
@@ -88,9 +108,11 @@ def main(input_folder, output_folder, offset_x, offset_y, face_percent, resize, 
 
     for file in os.listdir(input_folder):
         if file.lower().endswith((".jpg", ".jpeg", ".png")):
-            image_path = os.path.join(input_folder, file)
-            image = cv2.imread(image_path)
-
+            image_path = os.path.join(input_folder, file)            
+            pilimage = Image.open(image_path) 
+            pilimageSrgb = convert_to_srgb(pilimage) #convert to sRGB color space
+            image = np.array(pilimageSrgb) #convert to numpy array
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)  # Convert from RGB to BGR
             faces = detect_faces(image, net, threshold)
             if len(faces) == 0:
                 print(f"No face detected in {file}. Skipping file.")
