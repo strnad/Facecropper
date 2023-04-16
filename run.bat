@@ -29,6 +29,7 @@ call venv\Scripts\activate.bat
 python app.py --input_folder %input_folder% --output_folder %output_folder% --offset_x %offset_x% --offset_y %offset_y% --face_percent %face_percent% --resize %resize% --threshold %threshold% --output_format %output_format%
 pause
 call venv\Scripts\deactivate.bat
+goto end
 
 :run_defaults
 echo Running with default parameters...
