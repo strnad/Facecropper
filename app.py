@@ -111,7 +111,7 @@ if __name__ == "__main__":
     parser.add_argument("--offset_y", type=float, default=-15.0, help="Vertical offset of face center")
     parser.add_argument("--face_percent", type=float, default=40.0, help="Size of face in the resulting photo as a percentage")
     parser.add_argument("--resize", type=int, default=512, help="Size of the output image")
-    parser.add_argument("--threshold", type=float, default=0.25, help="Threshold of face detection (0-1)")
+    parser.add_argument("--threshold", type=float, default=0.5, help="Threshold of face detection (0-1)")
     parser.add_argument("--output_format", type=str, default="jpg", help="Output format (jpg, png, etc.")
 
     args = parser.parse_args()
