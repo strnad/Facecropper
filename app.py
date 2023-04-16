@@ -1,86 +1,120 @@
-import cv2
 import os
-import sys
-import argparse
+import cv2
 import numpy as np
+import argparse
 
-def crop_and_resize(input_path, output_path, offset_x=0, offset_y=0, face_percent=75, resize=None):
-    net = cv2.dnn.readNetFromCaffe("models/deploy.prototxt", "models/res10_300x300_ssd_iter_140000_fp16.caffemodel")
+def detect_faces(image, net,threshold):
+    (h, w) = image.shape[:2]
+    blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
+    net.setInput(blob)
+    detections = net.forward()
+    faces = []
+    for i in range(detections.shape[2]):
+        confidence = detections[0, 0, i, 2]
+        if confidence > threshold:
+            box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+            (startX, startY, endX, endY) = box.astype("int")
+            faces.append((startX, startY, endX, endY))
+    return faces
 
-    if os.path.isdir(input_path):
-        images = [os.path.join(input_path, img) for img in os.listdir(input_path) if img.endswith(('.jpg', '.png', '.jpeg'))]
-    elif os.path.isfile(input_path):
-        images = [input_path]
-    else:
-        raise ValueError("Invalid input path")
 
-    for img_path in images:
-        img = cv2.imread(img_path)
-        (h, w) = img.shape[:2]
+def process_image(image, face, offset_x, offset_y, face_percent, resize):
+    (startX, startY, endX, endY) = face
+    face_width = endX - startX
+    face_height = endY - startY
 
-        #add variable to keep track of face detection
-        face_detected = False
+    centerX = startX + face_width // 2
+    centerY = startY + face_height // 2
 
-        blob = cv2.dnn.blobFromImage(cv2.resize(img, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
-        net.setInput(blob)
-        detections = net.forward()
+    # Calculate the offset pixels related to the resized square image
+    offsetX = int(face_width * (-offset_x / 100))
+    offsetY = int(face_height * (-offset_y / 100))
 
-        for i in range(detections.shape[2]):
-            confidence = detections[0, 0, i, 2]
-            if confidence > 0.5:
-                face_detected = True
-                box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
-                (startX, startY, endX, endY) = box.astype("int")
-                face = img[startY:endY, startX:endX]
-                face_h, face_w = face.shape[:2]
+    # Adjust the offsets to the maximum possible value within image bounds
+    img_height, img_width = image.shape[:2]
+    adjusted_offsetX = max(min(offsetX, img_width - centerX - face_width // 2), -centerX + face_width // 2)
+    adjusted_offsetY = max(min(offsetY, img_height - centerY - face_height // 2), -centerY + face_height // 2)
 
-                # Calculate the additional offset based on the face_percent parameter
-                additional_offset_x = int(face_w * (100 - face_percent) / 100) // 2
-                additional_offset_y = int(face_h * (100 - face_percent) / 100) // 2
-                
-                # Update offsets
-                offsetX = int(face_w * offset_x / 100) + additional_offset_x
-                offsetY = int(face_h * offset_y / 100) + additional_offset_y
+    if offsetX != adjusted_offsetX or offsetY != adjusted_offsetY:
+        print(f"Desired offsets (x: {offsetX}, y: {offsetY}) exceed image boundaries. "
+              f"Using adjusted offsets (x: {adjusted_offsetX}, y: {adjusted_offsetY}) instead.")
 
-                # Crop the face
-                crop_startX = max(startX - offsetX, 0)
-                crop_startY = max(startY - offsetY, 0)
-                crop_endX = min(endX + offsetX, w)
-                crop_endY = min(endY + offsetY, h)
+    centerX += adjusted_offsetX
+    centerY += adjusted_offsetY
 
-                cropped_face = img[crop_startY:crop_endY, crop_startX:crop_endX]
-                # Resize the face
-                if resize:
-                    cropped_face = cv2.resize(cropped_face, (resize, resize))
-                # Save the face
-                output_file = os.path.join(output_path, os.path.basename(img_path))
-                cv2.imwrite(output_file, cropped_face)
+    new_width = int(face_width / (face_percent / 100))
+    new_height = new_width
 
-        # Print a message if no face was detected
-        if not face_detected:
-            print(f"No faces detected in {img_path}") 
+    half_width = new_width // 2
+    half_height = new_height // 2
 
+    # Check for necessary variables and adjust if needed
+    left_bound = max(centerX - half_width, 0)
+    right_bound = min(centerX + half_width, img_width)
+    top_bound = max(centerY - half_height, 0)
+    bottom_bound = min(centerY + half_height, img_height)
+
+    if left_bound == 0 or right_bound == img_width or top_bound == 0 or bottom_bound == img_height:
+        print(f"Face percent {face_percent} exceeds image boundaries. "
+              f"Adjusting the crop region to fit the image.")
+
+        # Maintain the aspect ratio by adjusting the bounds
+        if left_bound == 0:
+            right_bound = left_bound + new_width
+        elif right_bound == img_width:
+            left_bound = right_bound - new_width
+
+        if top_bound == 0:
+            bottom_bound = top_bound + new_height
+        elif bottom_bound == img_height:
+            top_bound = bottom_bound - new_height
+
+    # Crop the image
+    cropped_image = image[top_bound:bottom_bound, left_bound:right_bound]
+
+    # Resize the image
+    resized_image = cv2.resize(cropped_image, (resize, resize), interpolation=cv2.INTER_AREA)
+
+    return resized_image
+
+def main(input_folder, output_folder, offset_x, offset_y, face_percent, resize, threshold,output_format):
+    model = "models/res10_300x300_ssd_iter_140000_fp16.caffemodel"
+    proto = "models/deploy.prototxt"
+
+    net = cv2.dnn.readNetFromCaffe(proto, model)
+
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    for file in os.listdir(input_folder):
+        if file.lower().endswith((".jpg", ".jpeg", ".png")):
+            image_path = os.path.join(input_folder, file)
+            image = cv2.imread(image_path)
+
+            faces = detect_faces(image, net, threshold)
+            if len(faces) == 0:
+                print(f"No face detected in {file}. Skipping file.")
+            else:
+                for i, face in enumerate(faces):
+                    processed_image = process_image(image, face, offset_x, offset_y, face_percent, resize)
+                    output_path = os.path.join(output_folder, f"{os.path.splitext(file)[0]}_face_{i}.{output_format}")
+                    cv2.imwrite(output_path, processed_image)
+                    print(f"\nProcessed {file} and saved face {i} to {output_path}.")
+        else:
+            print(f"Unsupported file format {file}. Skipping file.")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    #parser.add_argument("input_path", help="Path to the image file or folder containing images")
-    #parser.add_argument("output_path", help="Path to the output folder")
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    #parser.add_argument("input_path", help="Path to the image file or folder containing images")
-    #parser.add_argument("output_path", help="Path to the output folder")
-    parser.add_argument("--offset_x", type=int, default=0, help="Percentage of horizontal offset around the face (default: 0)")
-    parser.add_argument("--offset_y", type=int, default=0, help="Percentage of vertical offset around the face (default: 0)")
-    parser.add_argument("--face_percent", type=int, default=40, help="Percentage of the face size in the cropped photo (default: 40)")
-    parser.add_argument("--resize", type=int, default=512, help="Resize the output image to the specified size (default: 512)")
+    parser = argparse.ArgumentParser(description="Face detection and cropping")
+    parser.add_argument("--input_folder", type=str, default="_INPUT", help="Input folder containing images")
+    parser.add_argument("--output_folder", type=str, default="_OUTPUT", help="Output folder for processed images")
+    parser.add_argument("--offset_x", type=float, default=00.0, help="Horizontal offset of face center")
+    parser.add_argument("--offset_y", type=float, default=-15.0, help="Vertical offset of face center")
+    parser.add_argument("--face_percent", type=float, default=40.0, help="Size of face in the resulting photo as a percentage")
+    parser.add_argument("--resize", type=int, default=512, help="Size of the output image")
+    parser.add_argument("--threshold", type=float, default=0.25, help="Threshold of face detection (0-1)")
+    parser.add_argument("--output_format", type=str, default="jpg", help="Output format (jpg, png, etc.")
 
     args = parser.parse_args()
 
-    crop_and_resize(
-        input_path="_INPUT",
-        output_path="_OUTPUT",
-        offset_x=args.offset_x,
-        offset_y=args.offset_y,
-        face_percent=args.face_percent,
-        resize=args.resize
-    )
+    main(args.input_folder, args.output_folder, args.offset_x, args.offset_y, args.face_percent, args.resize, args.threshold, args.output_format)
+
