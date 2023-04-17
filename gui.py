@@ -44,7 +44,7 @@ root = tk.Tk()
 root.title("Face Detection and Cropping")
 
 # Maximize window
-root.state("zoomed")
+#root.state("zoomed")
 # Set window background color
 root.configure(bg="#222")
 style = ttk.Style()
