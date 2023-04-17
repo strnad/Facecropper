@@ -106,7 +106,7 @@ ttk.Button(controls_frame, text="Start Processing", command=start_processing_and
 preview_container = ttk.Frame(main_frame)
 preview_container.grid(row=0, column=1, pady=10)
 
-input_preview_canvas = tk.Canvas(preview_container, bg="#222", highlightthickness=0, width=640, height=480)
+input_preview_canvas = tk.Canvas(preview_container, bg="#222", highlightthickness=0, width=700, height=600)
 input_preview_canvas.grid(row=0, column=0, padx=(0, 10))
 input_preview_frame = ttk.Frame(input_preview_canvas, relief="groove", borderwidth=2)
 input_preview_frame.grid(row=0, column=0, padx=(0, 10))
@@ -114,7 +114,7 @@ ttk.Label(input_preview_frame, text="Input Image Previews").grid(row=0, columnsp
 load_image_previews(input_folder_var.get(), input_preview_frame)
 input_preview_canvas.create_window(0, 0, window=input_preview_frame, anchor="nw")
 
-output_preview_canvas = tk.Canvas(preview_container, bg="#222", highlightthickness=0, width=640, height=480)
+output_preview_canvas = tk.Canvas(preview_container, bg="#222", highlightthickness=0, width=690, height=600)
 output_preview_canvas.grid(row=0, column=1)
 output_preview_frame = ttk.Frame(output_preview_canvas, relief="groove", borderwidth=2)
 output_preview_frame.grid(row=0, column=1)
