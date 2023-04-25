@@ -51,26 +51,35 @@ def process_image(image, face, offset_x, offset_y, face_percent, resize):
     half_width = new_width // 2
     half_height = new_height // 2
 
+    # Calculate the maximum possible face percentage within image bounds
+    max_face_percent_x = (img_width - abs(adjusted_offsetX * 2)) / face_width * 100
+    max_face_percent_y = (img_height - abs(adjusted_offsetY * 2)) / face_height * 100
+    max_face_percent = min(max_face_percent_x, max_face_percent_y)
+
+    # Adjust the new_width and new_height based on the maximum face percentage
+    if face_percent > max_face_percent:
+        face_percent = max_face_percent
+        new_width = int(face_width / (face_percent / 100))
+        new_height = new_width
+        half_width = new_width // 2
+        half_height = new_height // 2
+
+    # Calculate the minimum possible face percentage to avoid distortion
+    min_face_percent = max(face_width / img_width * 100, face_height / img_height * 100)
+
+    # Adjust the new_width and new_height based on the minimum face percentage
+    if face_percent < min_face_percent:
+        face_percent = min_face_percent
+        new_width = int(face_width / (face_percent / 100))
+        new_height = new_width
+        half_width = new_width // 2
+        half_height = new_height // 2
+
     # Check for necessary variables and adjust if needed
     left_bound = max(centerX - half_width, 0)
     right_bound = min(centerX + half_width, img_width)
     top_bound = max(centerY - half_height, 0)
     bottom_bound = min(centerY + half_height, img_height)
-
-    if left_bound == 0 or right_bound == img_width or top_bound == 0 or bottom_bound == img_height:
-        print(f"Face percent {face_percent} exceeds image boundaries. "
-              f"Adjusting the crop region to fit the image.")
-
-        # Maintain the aspect ratio by adjusting the bounds
-        if left_bound == 0:
-            right_bound = left_bound + new_width
-        elif right_bound == img_width:
-            left_bound = right_bound - new_width
-
-        if top_bound == 0:
-            bottom_bound = top_bound + new_height
-        elif bottom_bound == img_height:
-            top_bound = bottom_bound - new_height
 
     # Crop the image
     cropped_image = image[top_bound:bottom_bound, left_bound:right_bound]
@@ -80,6 +89,7 @@ def process_image(image, face, offset_x, offset_y, face_percent, resize):
 
     return resized_image
 
+                               
 def convert_to_srgb(pil_image,print_info=False):
     # Load the sRGB ICC profile
     srgb_profile = ImageCms.createProfile("sRGB")
@@ -132,7 +142,7 @@ def run_cli():
     parser.add_argument("--input_folder", type=str, default="_INPUT", help="Input folder containing images")
     parser.add_argument("--output_folder", type=str, default="_OUTPUT", help="Output folder for processed images")
     parser.add_argument("--offset_x", type=float, default=00.0, help="Horizontal offset of face center")
-    parser.add_argument("--offset_y", type=float, default=-15.0, help="Vertical offset of face center")
+    parser.add_argument("--offset_y", type=float, default=-10.0, help="Vertical offset of face center")
     parser.add_argument("--face_percent", type=float, default=40.0, help="Size of face in the resulting photo as a percentage")
     parser.add_argument("--resize", type=int, default=512, help="Size of the output image")
     parser.add_argument("--threshold", type=float, default=0.5, help="Threshold of face detection (0-1)")
